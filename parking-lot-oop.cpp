@@ -39,7 +39,7 @@ class Vehicle{
     double calculateParkingDurationInHours(){
         auto currentTime = chrono::system_clock::now();
         auto duration = chrono::duration_cast<chrono::hours>(currentTime - parkingStartTime);
-        return duration.count();
+        return duration.count() / 3600.0;
     }
 
     inline double calculateParkingFee() {
@@ -47,7 +47,6 @@ class Vehicle{
     }
 
     virtual string getType() = 0;
-    virtual ~Vehicle() {cout << "Vehicle destroyed!" << endl;}
 };
 
 class Car : public Vehicle{
@@ -79,8 +78,8 @@ class Parking{
         }
     }
 
-    pair<int,int> const getSpot() { return {rows,cols}; };
-    bool const isValidSpot(int r, int c) { return (r>=0 && r<rows && c>=0 && c<cols); } 
+    pair<int,int> getSpot() const { return {rows,cols}; };
+    bool isValidSpot(int r, int c) const { return (r>=0 && r<rows && c>=0 && c<cols); } 
 
     pair<int,int> findVacantSpot() const {
         for(int i=0; i<rows; i++){
