@@ -1,10 +1,13 @@
-#include<bits/stdc++.h>
+#include<iostream>
+#include<chrono>
+#include<vector>
+#include <memory>
 using namespace std;
 
 class PricingStrategy{
     public:
     virtual double calculateFee(double hours) = 0;
-    virtual ~PricingStrategy() {}                           
+    virtual ~PricingStrategy() {}                          
 };
 
 class HourlyPricing : public PricingStrategy{
@@ -38,7 +41,7 @@ class Vehicle{
 
     double calculateParkingDurationInHours(){
         auto currentTime = chrono::system_clock::now();
-        auto duration = chrono::duration_cast<chrono::hours>(currentTime - parkingStartTime);
+        auto duration = chrono::duration_cast<chrono::seconds>(currentTime - parkingStartTime);
         return duration.count() / 3600.0;
     }
 
@@ -100,21 +103,9 @@ class Parking{
         }
     }
 
-    void vacateSpot(unique_ptr<Vehicle> v){
-        for(int i=0;i<rows;i++){
-            for(int j=0;j<cols;j++){
-                if(parkingSpots[i][j] == v){
-                    parkingSpots[i][j] = nullptr;
-                    return;
-                }
-            }
-        }
-    }
-
-    void vacateSpot(int r, int c){
-        if(parkingSpots[r][c]){
-            parkingSpots[r][c] = nullptr;
-        }
+    unique_ptr<Vehicle> vacateSpot(int r, int c){
+        if(!isValidSpot(r,c) && !parkingSpots[r][c]){ return nullptr; }
+        return move(parkingSpots[r][c]);
     }
 
     double calculateParkingFee (int r,int c) const {
