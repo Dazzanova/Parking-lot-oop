@@ -110,9 +110,17 @@ class Parking{
     }
 
     double calculateParkingFee (int r,int c) const {
-    if(parkingSpots[r][c])
+        if(!isValidSpot(r,c)) {
+            cout << "Invalid spot details! please choose a valid spot\n";
+            return 0;
+        }
+
+        if(!parkingSpots[r][c]) {
+            cout << "No vehicle is parked at this spot!\n";
+            return 0;
+        }
+        
         return parkingSpots[r][c]->calculateParkingFee();
-    return 0;
 }
 
     void printParking() const {
