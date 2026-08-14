@@ -45,25 +45,26 @@ class Vehicle{
         return duration.count() / 3600.0;
     }
 
-    inline double calculateParkingFee() {
+    double calculateParkingFee() {
         return pricing->calculateFee(calculateParkingDurationInHours());
     }
 
     virtual string getType() = 0;
+    virtual ~Vehicle() = default;
 };
 
 class Car : public Vehicle{
     public:
     string getType() override { return "C"; }
     Car() : Vehicle(make_unique<HourlyPricing>(5.0)) {}
-    ~Car() {cout << "Car destroyed!" << endl;}
+    ~Car() {}
 };
 
 class Bike : public Vehicle{
     public:
     string getType() override { return "B"; }
     Bike() : Vehicle(make_unique<HourlyPricing>(2.0)) {}
-    ~Bike() {cout << "Bike destroyed!" << endl;}
+    ~Bike() {}
 };
 
 class Parking{
@@ -98,13 +99,13 @@ class Parking{
         if (r == -1) cout << "Sorry, all spots occupied!";
         else{
             v->occupySpot(r,c);
-            parkingSpots[r][c] = move(v); //transfer ownership
+            parkingSpots[r][c] = move(v); 
             cout << "Your vehicle is now parked at " << r << "," << c << "! (remember the spot!)" << endl;
         }
     }
 
     unique_ptr<Vehicle> vacateSpot(int r, int c){
-        if(!isValidSpot(r,c) && !parkingSpots[r][c]){ return nullptr; }
+        if(!isValidSpot(r,c) || !parkingSpots[r][c]) { return nullptr; }
         return move(parkingSpots[r][c]);
     }
 
@@ -166,10 +167,11 @@ int main(){
                 p.parkVehicle(make_unique<Car>());
                 cout << "Your car is parked!";
             }
-            else{
+            else if(type == 2){
                 p.parkVehicle(make_unique<Bike>());
                 cout << "Your bike is parked!";
             }
+            else cout << "Invalid vehicle type! Please choose a valid option.\n";
             break;
 
         case 2:
