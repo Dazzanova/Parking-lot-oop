@@ -31,3 +31,16 @@ Parking
    |
    +-- PricingStrategy
           +-- HourlyPricing
+          
+`Parking` manages the parking spots, and each `ParkingSpot` owns the vehicle currently parked there.
+
+I'm building this incrementally, so the design will keep changing as I learn more about OOP and system design.
+
+### Next targets
+
+- Parking tickets
+- Better spot management
+- More pricing strategies
+- Different types of parking spots
+- Cleaner project structure
+- Tests
