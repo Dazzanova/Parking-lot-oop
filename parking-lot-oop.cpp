@@ -1,13 +1,13 @@
 #include<iostream>
 #include<chrono>
 #include<vector>
-#include <memory>
+#include<memory>
 using namespace std;
 
 class PricingStrategy{
     public:
     virtual double calculateFee(double hours) = 0;
-    virtual ~PricingStrategy() {}                          
+    virtual ~PricingStrategy() {}
 };
 
 class HourlyPricing : public PricingStrategy{
@@ -20,24 +20,16 @@ class HourlyPricing : public PricingStrategy{
 };
 
 class Vehicle{
-    int rowNum;
-    int colNum;
     chrono::time_point<chrono::system_clock> parkingStartTime;
     unique_ptr<PricingStrategy> pricing;
 
     public:
-    Vehicle(unique_ptr<PricingStrategy> p) : rowNum(-1), colNum(-1), pricing(move(p)) {}
-    
-    void occupySpot(int r, int c){
-        if(r<0 || c<0) {
-            cout << "Invalid spot!";
-            return;
-        }
-        rowNum = r;
-        colNum = c;
+    Vehicle(unique_ptr<PricingStrategy> p) : pricing(move(p)) {}
+
+    void startParking(){
         parkingStartTime = chrono::system_clock::now();
     }
-    
+
 
     double calculateParkingDurationInHours(){
         auto currentTime = chrono::system_clock::now();
@@ -67,28 +59,68 @@ class Bike : public Vehicle{
     ~Bike() {}
 };
 
+/*
+Grid design:
+
+Parking
+   |
+   +---- ParkingSpot(row ,col)
+              |
+              +---- unique_ptr<Vehicle>
+
+    parking manages parkingSpot which in turn manages the vehicle occpying it
+*/
+
+class ParkingSpot{
+    int row;
+    int col;
+    unique_ptr<Vehicle> vehicle;
+    public:
+    ParkingSpot(int r, int c) : row(r) , col(c) {}
+
+    bool isOccupied() const {
+        return vehicle != nullptr;
+    }
+
+    void park(unique_ptr<Vehicle> v){
+        vehicle = move(v);
+    }
+
+    unique_ptr<Vehicle> removeVehicle(){
+        return move(vehicle);
+    }
+
+    int getRow() const { return row; }
+
+    int getCol() const { return col; }
+
+    Vehicle* getVehicle() const { return vehicle.get(); }
+};
+
 class Parking{
     int rows;
     int cols;
-    vector<vector<unique_ptr<Vehicle>>> parkingSpots;
+    vector<vector<ParkingSpot>> parkingSpots;
+
     public:
-    Parking(int r, int c) {
+    Parking(int r, int c){
         rows = r;
         cols = c;
-
         parkingSpots.resize(r);
         for(int i=0;i<r;i++){
-            parkingSpots[i] = vector<unique_ptr<Vehicle>>(c);
+            parkingSpots[i].reserve(c);
+            for(int j=0;j<c;j++){
+                parkingSpots[i].emplace_back(i,j);
+            }
         }
     }
 
-    pair<int,int> getSpot() const { return {rows,cols}; };
-    bool isValidSpot(int r, int c) const { return (r>=0 && r<rows && c>=0 && c<cols); } 
+    bool isValidSpot(int r, int c) const { return (r>=0 && r<rows && c>=0 && c<cols); }
 
     pair<int,int> findVacantSpot() const {
         for(int i=0; i<rows; i++){
             for(int j=0; j<cols; j++){
-                if(!parkingSpots[i][j])    return {i,j};
+                if(!parkingSpots[i][j].isOccupied())  return {i,j};
             }
         }
         return {-1,-1};
@@ -96,17 +128,21 @@ class Parking{
 
     void parkVehicle(unique_ptr<Vehicle> v){
         auto [r,c] = findVacantSpot();
-        if (r == -1) cout << "Sorry, all spots occupied!";
-        else{
-            v->occupySpot(r,c);
-            parkingSpots[r][c] = move(v); 
-            cout << "Your vehicle is now parked at " << r << "," << c << "! (remember the spot!)" << endl;
+
+        if (r == -1) {
+            cout << "Sorry, all spots occupied!";
+            return;
         }
+
+        v->startParking();
+        parkingSpots[r][c].park(move(v));
+        cout << "Your vehicle is now parked at " << r << "," << c << "! (remember the spot!)" << endl;
+
     }
 
     unique_ptr<Vehicle> vacateSpot(int r, int c){
-        if(!isValidSpot(r,c) || !parkingSpots[r][c]) { return nullptr; }
-        return move(parkingSpots[r][c]);
+        if(!isValidSpot(r,c) || !parkingSpots[r][c].isOccupied()) { return nullptr; }
+        return parkingSpots[r][c].removeVehicle();
     }
 
     double calculateParkingFee (int r,int c) const {
@@ -115,19 +151,19 @@ class Parking{
             return 0;
         }
 
-        if(!parkingSpots[r][c]) {
+        if(!parkingSpots[r][c].isOccupied()) {
             cout << "No vehicle is parked at this spot!\n";
             return 0;
         }
-        
-        return parkingSpots[r][c]->calculateParkingFee();
+
+        return parkingSpots[r][c].getVehicle()->calculateParkingFee();
 }
 
     void printParking() const {
         for(int i=0;i<rows;i++){
             for(int j=0;j<cols;j++){
-                if(parkingSpots[i][j])
-                cout << parkingSpots[i][j]->getType() << "  ";
+                if(parkingSpots[i][j].isOccupied())
+                cout << parkingSpots[i][j].getVehicle()->getType() << "  ";
                 else cout << "." << "  ";
             }
             cout << endl;
