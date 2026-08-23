@@ -20,8 +20,8 @@ class HourlyPricing : public PricingStrategy{
 };
 
 class Vehicle{
-    chrono::time_point<chrono::system_clock> parkingStartTime;
     unique_ptr<PricingStrategy> pricing;
+    chrono::time_point<chrono::system_clock> parkingStartTime;
 
     public:
     Vehicle(unique_ptr<PricingStrategy> p) : pricing(move(p)) {}
@@ -48,6 +48,7 @@ class Vehicle{
 class Car : public Vehicle{
     public:
     string getType() override { return "C"; }
+
     Car() : Vehicle(make_unique<HourlyPricing>(5.0)) {}
     ~Car() {}
 };
@@ -55,6 +56,7 @@ class Car : public Vehicle{
 class Bike : public Vehicle{
     public:
     string getType() override { return "B"; }
+
     Bike() : Vehicle(make_unique<HourlyPricing>(2.0)) {}
     ~Bike() {}
 };
@@ -126,18 +128,17 @@ class Parking{
         return {-1,-1};
     }
 
-    void parkVehicle(unique_ptr<Vehicle> v){
+    ParkingSpot* parkVehicle(unique_ptr<Vehicle> v){
         auto [r,c] = findVacantSpot();
 
         if (r == -1) {
-            cout << "Sorry, all spots occupied!";
-            return;
+            return nullptr;
         }
 
         v->startParking();
         parkingSpots[r][c].park(move(v));
-        cout << "Your vehicle is now parked at " << r << "," << c << "! (remember the spot!)" << endl;
 
+        return &parkingSpots[r][c];
     }
 
     unique_ptr<Vehicle> vacateSpot(int r, int c){
@@ -197,6 +198,7 @@ int main(){
 
     switch (i) {
         case 1:
+            {
             cout << "Which type of vehicle do you want to park? (1 for Car, 2 for Bike): ";
             int type;
             if (!(cin >> type)) {
@@ -205,18 +207,28 @@ int main(){
                 cout << "Please enter a valid number.\n";
                 continue;
             }
+            unique_ptr<Vehicle> vehicle;
 
             if(type == 1){
-                //Car c (wrong way, destroyed after the scope ends, so we need to use dynamic memory allocation)
-                p.parkVehicle(make_unique<Car>());
-                cout << "Your car is parked!";
+                vehicle = make_unique<Car>();
             }
             else if(type == 2){
-                p.parkVehicle(make_unique<Bike>());
-                cout << "Your bike is parked!";
+                vehicle = make_unique<Bike>();
             }
             else cout << "Invalid vehicle type! Please choose a valid option.\n";
+
+            ParkingSpot* spot = p.parkVehicle(move(vehicle));
+
+            if(!spot)
+                cout << "Cant park mate, lot full";
+            else
+            {
+                cout << "Your vehicle is parked at "
+                << spot->getRow() << ", "
+                << spot->getCol() << endl;
+            }
             break;
+        }
 
         case 2:
             int x, y;
