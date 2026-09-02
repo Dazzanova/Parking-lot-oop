@@ -215,7 +215,10 @@ int main(){
             else if(type == 2){
                 vehicle = make_unique<Bike>();
             }
-            else cout << "Invalid vehicle type! Please choose a valid option.\n";
+            else {
+                cout << "Invalid vehicle type! Please choose a valid option.\n";
+                break;
+            }
 
             ParkingSpot* spot = p.parkVehicle(move(vehicle));
 
@@ -231,6 +234,7 @@ int main(){
         }
 
         case 2:
+            {
             int x, y;
             cout << "Pls enter where your car is parked";
             cin >> x >> y;
@@ -238,19 +242,30 @@ int main(){
                 cout << "Invalid spot details! please choose a valid spot\n";
                 break;
             }
-            p.vacateSpot(x, y);
-            cout << "Car vacated successfully.\n";
-            break;
+            auto vehicle = p.vacateSpot(x, y);
 
+            if (!vehicle) {
+                cout << "No vehicle is parked at this spot.\n";
+                break;
+            }
+
+            cout << "Parking fee: $" << vehicle->calculateParkingFee() << '\n';
+            cout << "Vehicle vacated successfully.\n";
+            break;
+            }
         case 3:
+            {
+            int x,y;
             cout << "Pls enter where your car is parked" << endl;
             cin >> x >> y;
             if(!p.isValidSpot(x, y)) {
                 cout << "Invalid spot details! please choose a valid spot\n";
                 break;
             }
-            cout << "Parking fee: $" << p.calculateParkingFee(x, y) << '\n';
+            double fee = p.calculateParkingFee(x, y);
+            cout << "Parking fee: $" << fee << '\n';
             break;
+            }
 
         case 4:
             cout << "Now showing parking lot status:\n";
