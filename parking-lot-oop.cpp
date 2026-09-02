@@ -119,6 +119,10 @@ class Parking{
 
     bool isValidSpot(int r, int c) const { return (r>=0 && r<rows && c>=0 && c<cols); }
 
+    bool isOccupied(int r, int c) const {
+        return parkingSpots[r][c].isOccupied();
+    }
+
     pair<int,int> findVacantSpot() const {
         for(int i=0; i<rows; i++){
             for(int j=0; j<cols; j++){
@@ -147,18 +151,8 @@ class Parking{
     }
 
     double calculateParkingFee (int r,int c) const {
-        if(!isValidSpot(r,c)) {
-            cout << "Invalid spot details! please choose a valid spot\n";
-            return 0;
-        }
-
-        if(!parkingSpots[r][c].isOccupied()) {
-            cout << "No vehicle is parked at this spot!\n";
-            return 0;
-        }
-
         return parkingSpots[r][c].getVehicle()->calculateParkingFee();
-}
+    }
 
     void printParking() const {
         for(int i=0;i<rows;i++){
@@ -255,16 +249,25 @@ int main(){
             }
         case 3:
             {
-            int x,y;
-            cout << "Pls enter where your car is parked" << endl;
-            cin >> x >> y;
-            if(!p.isValidSpot(x, y)) {
-                cout << "Invalid spot details! please choose a valid spot\n";
+                int x, y;
+
+                cout << "Pls enter where your car is parked\n";
+                cin >> x >> y;
+
+                if(!p.isValidSpot(x, y)) {
+                    cout << "Invalid spot details! please choose a valid spot\n";
+                    break;
+                }
+
+                if(!p.isOccupied(x, y)) {
+                    cout << "No vehicle is parked at this spot!\n";
+                    break;
+                }
+
+                double fee = p.calculateParkingFee(x, y);
+                cout << "Parking fee: $" << fee << '\n';
+
                 break;
-            }
-            double fee = p.calculateParkingFee(x, y);
-            cout << "Parking fee: $" << fee << '\n';
-            break;
             }
 
         case 4:
