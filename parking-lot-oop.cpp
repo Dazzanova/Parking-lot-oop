@@ -166,6 +166,16 @@ class Parking{
     }
 };
 
+class ParkingTicket{
+    Vehicle* vehicle;
+    ParkingSpot* spot;
+    chrono::time_point<chrono::system_clock> entryTime;
+    public:
+        ParkingTicket(Vehicle* v, ParkingSpot* ps) : vehicle(v), spot(ps), entryTime(chrono::system_clock::now()) {}
+};
+
+
+
 int main(){
     Parking p(5,8);
 
