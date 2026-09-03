@@ -99,10 +99,30 @@ class ParkingSpot{
     Vehicle* getVehicle() const { return vehicle.get(); }
 };
 
+
+class ParkingTicket{
+    Vehicle* vehicle;
+    ParkingSpot* spot;
+    chrono::time_point<chrono::system_clock> entryTime;
+    public:
+        ParkingTicket(Vehicle* v, ParkingSpot* ps) : vehicle(v), spot(ps), entryTime(chrono::system_clock::now()) {}
+
+        Vehicle* getVehicle() const {
+            return vehicle;
+        }
+
+        ParkingSpot* getParkingSpot() const {
+            return spot;
+        }
+
+};
+
+
 class Parking{
     int rows;
     int cols;
     vector<vector<ParkingSpot>> parkingSpots;
+    vector<unique_ptr<ParkingTicket>> tickets;
 
     public:
     Parking(int r, int c){
@@ -132,7 +152,7 @@ class Parking{
         return {-1,-1};
     }
 
-    ParkingSpot* parkVehicle(unique_ptr<Vehicle> v){
+    ParkingTicket* parkVehicle(unique_ptr<Vehicle> v){
         auto [r,c] = findVacantSpot();
 
         if (r == -1) {
@@ -142,7 +162,17 @@ class Parking{
         v->startParking();
         parkingSpots[r][c].park(move(v));
 
-        return &parkingSpots[r][c];
+        Vehicle* parkedVehicle = parkingSpots[r][c].getVehicle();
+
+        auto ticket = make_unique<ParkingTicket>(
+            parkedVehicle,
+            &parkingSpots[r][c]
+        );
+
+        ParkingTicket* ticketPtr = ticket.get();
+        tickets.push_back(move(ticket));
+
+        return ticketPtr;
     }
 
     unique_ptr<Vehicle> vacateSpot(int r, int c){
@@ -166,13 +196,7 @@ class Parking{
     }
 };
 
-class ParkingTicket{
-    Vehicle* vehicle;
-    ParkingSpot* spot;
-    chrono::time_point<chrono::system_clock> entryTime;
-    public:
-        ParkingTicket(Vehicle* v, ParkingSpot* ps) : vehicle(v), spot(ps), entryTime(chrono::system_clock::now()) {}
-};
+
 
 
 
@@ -224,15 +248,15 @@ int main(){
                 break;
             }
 
-            ParkingSpot* spot = p.parkVehicle(move(vehicle));
+            ParkingTicket* ticket = p.parkVehicle(move(vehicle));
 
-            if(!spot)
+            if(!ticket)
                 cout << "Cant park mate, lot full";
             else
             {
                 cout << "Your vehicle is parked at "
-                << spot->getRow() << ", "
-                << spot->getCol() << endl;
+                << ticket->getParkingSpot()->getRow() << ", "
+                << ticket->getParkingSpot()->getCol() << endl;
             }
             break;
         }
