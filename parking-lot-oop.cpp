@@ -2,7 +2,10 @@
 #include<chrono>
 #include<vector>
 #include<memory>
+#include<optional>
+
 using namespace std;
+
 
 class PricingStrategy{
     public:
@@ -21,24 +24,12 @@ class HourlyPricing : public PricingStrategy{
 
 class Vehicle{
     unique_ptr<PricingStrategy> pricing;
-    chrono::time_point<chrono::system_clock> parkingStartTime;
 
     public:
     Vehicle(unique_ptr<PricingStrategy> p) : pricing(move(p)) {}
 
-    void startParking(){
-        parkingStartTime = chrono::system_clock::now();
-    }
-
-
-    double calculateParkingDurationInHours(){
-        auto currentTime = chrono::system_clock::now();
-        auto duration = chrono::duration_cast<chrono::seconds>(currentTime - parkingStartTime);
-        return duration.count() / 3600.0;
-    }
-
-    double calculateParkingFee() {
-        return pricing->calculateFee(calculateParkingDurationInHours());
+    double calculateParkingFee(double hours) {
+        return pricing->calculateFee(hours);
     }
 
     virtual string getType() = 0;
@@ -104,6 +95,7 @@ class ParkingTicket{
     Vehicle* vehicle;
     ParkingSpot* spot;
     chrono::time_point<chrono::system_clock> entryTime;
+    optional<chrono::time_point<chrono::system_clock>> exitTime;
     public:
         ParkingTicket(Vehicle* v, ParkingSpot* ps) : vehicle(v), spot(ps), entryTime(chrono::system_clock::now()) {}
 
@@ -115,6 +107,23 @@ class ParkingTicket{
             return spot;
         }
 
+        void closeTicket() {
+            exitTime = chrono::system_clock::now();
+        }
+
+        double getParkingDurationInHours() const {
+            auto endTime = exitTime.value_or(chrono::system_clock::now());
+
+            auto duration = chrono::duration_cast<chrono::seconds>(
+                endTime - entryTime
+            );
+
+            return duration.count() / 3600.0;
+        }
+
+        double calculateFee() const {
+              return vehicle->calculateParkingFee( getParkingDurationInHours() );
+        }
 };
 
 
@@ -159,7 +168,6 @@ class Parking{
             return nullptr;
         }
 
-        v->startParking();
         parkingSpots[r][c].park(move(v));
 
         Vehicle* parkedVehicle = parkingSpots[r][c].getVehicle();
@@ -178,10 +186,6 @@ class Parking{
     unique_ptr<Vehicle> vacateSpot(int r, int c){
         if(!isValidSpot(r,c) || !parkingSpots[r][c].isOccupied()) { return nullptr; }
         return parkingSpots[r][c].removeVehicle();
-    }
-
-    double calculateParkingFee (int r,int c) const {
-        return parkingSpots[r][c].getVehicle()->calculateParkingFee();
     }
 
     void printParking() const {
@@ -277,7 +281,6 @@ int main(){
                 break;
             }
 
-            cout << "Parking fee: $" << vehicle->calculateParkingFee() << '\n';
             cout << "Vehicle vacated successfully.\n";
             break;
             }
